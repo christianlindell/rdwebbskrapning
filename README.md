@@ -10,17 +10,9 @@ Dalarnas repo [funktioner](https://github.com/Region-Dalarna/funktioner).
 
 Kräver R 4.1 eller senare och Microsoft Edge eller Google Chrome.
 
-Installera från GitHub:
-
 ```r
 install.packages("remotes")
 remotes::install_github("christianlindell/rdwebbskrapning", dependencies = TRUE, build_vignettes = TRUE)
-```
-
-Har du en lokal kopia av repot kan du i stället installera från den:
-
-```r
-remotes::install_local("H:/R/R_claude/rdwebbskrapning", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 `build_vignettes = TRUE` gör att vignetten följer med; öppna den med
