@@ -1,0 +1,33 @@
+Package: rdwebbskrapning
+Title: Webbskrapning med Edge eller Chrome via chromote och selenider
+Version: 0.1.1
+Authors@R: c(
+    person("Christian", "Lindell", , "christian_lindell@yahoo.com", role = c("aut", "cre")),
+    person("Region Dalarna", role = "cph")
+  )
+Description: Startar en Chromium-baserad webbläsare (Edge eller Chrome)
+    och styr den från R, för att hämta data från webbsidor som kräver
+    klick, val i listor eller nedladdningar. Funktionerna fungerar på
+    datorer med AppLocker och företagsproxy, och kommer från skriptet
+    func_webbskrapning.R i Region Dalarnas repo funktioner.
+License: MIT + file LICENSE
+Imports: 
+    chromote,
+    httpuv,
+    httr,
+    jsonlite,
+    processx,
+    rlang,
+    selenider,
+    utils
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: 
+    knitr
+Config/roxygen2/version: 8.1.1
+Encoding: UTF-8
+Language: sv
+Roxygen: list(markdown = TRUE)
+Depends: 
+    R (>= 4.1.0)

@@ -1,0 +1,270 @@
+---
+title: "Kom igång med rdwebbskrapning"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Kom igång med rdwebbskrapning}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+# Läser exempelkoden från inst/examples så att vignetten alltid visar samma
+# exempel som hjälpsidorna
+exempel <- function(fn) {
+  fil <- file.path("..", "inst", "examples", paste0(fn, ".R"))
+  if (!file.exists(fil)) fil <- system.file("examples", paste0(fn, ".R"), package = "rdwebbskrapning")
+  readLines(fil, encoding = "UTF-8")
+}
+```
+
+rdwebbskrapning hämtar data från webbsidor som inte har något API, där man
+måste klicka, välja i listor, fylla i fält eller ladda ner filer för att komma
+åt siffrorna. Paketet startar Microsoft Edge eller Google Chrome och styr
+webbläsaren från R med paketen chromote och selenider. Webbläsaren startas så
+att det fungerar även på datorer med AppLocker och företagsproxy.
+
+Ett skrapskript följer nästan alltid samma mönster:
+
+1. Starta en session med `starta_skrapsession()`.
+2. Öppna sidan med `selenider::open_url()`.
+3. Vänta tills sidan är klar, välj i listor, fyll i fält och klicka.
+4. Ladda ner filen med `hamta_nedladdning()` eller läs värden direkt från sidan.
+5. Stäng sessionen med `stang_skrapsession()`.
+
+Alla funktioner tar sessionen som första argument, `skrap`. Exemplen nedan
+skrapar en liten exempelsida som följer med paketet
+(`system.file("extdata", "exempelsida.html", package = "rdwebbskrapning")`).
+De kräver Edge eller Chrome och internetanslutning och körs därför inte när
+vignetten byggs, utom där det står något annat. Kör dem själv i R, eller
+kör `example(funktionsnamn)`.
+
+```{r}
+library(rdwebbskrapning)
+```
+
+## Starta och stänga en session
+
+### Kontrollera datorn först
+
+`testa_skrapmiljo()` är det första en ny användare bör köra. Funktionen går
+igenom förutsättningarna i tur och ordning: internetanslutning, R-paket,
+webbläsare, att webbläsaren får startas (AppLocker), att den svarar lokalt och
+att chromote kan ansluta. Den skriver ut vilket steg som brister och vad man
+kan göra åt det, och returnerar `TRUE` om allt fungerar. Det finns inga
+obligatoriska parametrar.
+
+```{r, code = exempel("testa_skrapmiljo"), eval = FALSE}
+```
+
+`hitta_webblasare()` letar upp Edge eller Chrome på de vanliga platserna och i
+Windows-registret. Ligger webbläsaren någon annanstans kan sökvägen sparas i
+miljövariabeln `SKRAP_EDGE_PATH` i `.Renviron`. Det här exemplet körs när
+vignetten byggs.
+
+```{r, code = exempel("hitta_webblasare")}
+```
+
+`test_internetanslutning()` skickar en vanlig HTTP-förfrågan och returnerar
+`TRUE` eller `FALSE`. Den används av `starta_skrapsession()`, och fungerar
+bakom proxy till skillnad från `curl::has_internet()`.
+
+```{r, code = exempel("test_internetanslutning"), eval = FALSE}
+```
+
+### Starta och stänga
+
+`starta_skrapsession()` startar webbläsaren och returnerar ett
+`skrapsession`-objekt som skickas till alla andra funktioner. Inga parametrar
+är obligatoriska. Med `headless = FALSE` syns webbläsaren, vilket är bra när
+man bygger ett nytt skript. `user_agent` döljer att webbläsaren körs headless
+för sidor med enkla botskydd.
+
+```{r, code = exempel("starta_skrapsession"), eval = FALSE}
+```
+
+`stang_skrapsession()` stänger sessionen, avslutar just den
+webbläsarprocessen och tar bort den tillfälliga profilmappen. Den enda
+obligatoriska parametern är `skrap`.
+
+```{r, code = exempel("stang_skrapsession"), eval = FALSE}
+```
+
+`with_skrapsession()` startar en session, kör koden och stänger sessionen även
+om koden ger ett fel. I koden finns sessionen i variabeln `skrap`, och det
+sista värdet returneras. Den obligatoriska parametern är `expr`; övriga
+argument skickas till `starta_skrapsession()`.
+
+```{r, code = exempel("with_skrapsession"), eval = FALSE}
+```
+
+## Undersöka en sida
+
+När man skriver ett nytt skript behöver man veta vilka id:n, klasser och
+värden sidans kontroller har. `inspektera_kontroller()` returnerar en lista
+med tre data frames: select-listor med alla alternativ, klickbara element och
+inmatningsfält. `visa_kontroller()` skriver ut samma sak i läsbar form och
+föreslår hur element utan id kan klickas. Båda kräver bara `skrap`.
+
+```{r, code = exempel("inspektera_kontroller"), eval = FALSE}
+```
+
+```{r, code = exempel("visa_kontroller"), eval = FALSE}
+```
+
+`kor_js()` kör ett JavaScript-uttryck på sidan och returnerar värdet. Den
+används för att läsa ut sådant paketet saknar egen funktion för, och för att
+felsöka. Obligatoriska parametrar är `skrap` och `js`.
+
+```{r, code = exempel("kor_js"), eval = FALSE}
+```
+
+`hitta()`, `hitta_alla()` och `hitta_via_text()` returnerar selenider-element
+som kan skickas vidare till t.ex. `selenider::elem_click()`,
+`selenider::elem_expect()` och `selenider::elem_text()`. `hitta()` och
+`hitta_alla()` tar en CSS-selektor eller `xpath =`, och `hitta_via_text()`
+tar elementets synliga text, som får innehålla apostrofer. Villkor till `elem_expect()` skrivs som en
+funktion, `function(x) selenider::is_visible(x)`, om selenider inte är laddat
+med `library()`.
+
+```{r, code = exempel("hitta"), eval = FALSE}
+```
+
+```{r, code = exempel("hitta_alla"), eval = FALSE}
+```
+
+```{r, code = exempel("hitta_via_text"), eval = FALSE}
+```
+
+## Klicka och vänta
+
+Klickfunktionerna klickar i en enda JavaScript-körning. Det är mycket snabbare
+än `selenider::elem_click()` på sidor med många element, där seleniders
+upprepade väntekontroller kan ta lång tid. Med `vanta = TRUE` (standard)
+väntar de in en sidladdning om klicket startar en, t.ex. en postback. Alla tar
+`iframe` för element i en iframe från samma domän.
+
+`klicka_via_text()` klickar på den första länken eller knappen med exakt den
+synliga texten. Obligatoriska parametrar är `skrap` och `text`.
+
+```{r, code = exempel("klicka_via_text"), eval = FALSE}
+```
+
+`klicka_via_klass_och_text()` kräver både en CSS-klass och en exakt text, och
+är till för div-"knappar" där flera element delar samma klass. Obligatoriska
+parametrar är `skrap`, `klass` och `text`.
+
+```{r, code = exempel("klicka_via_klass_och_text"), eval = FALSE}
+```
+
+`klicka_via_id()` pekar ut elementet med en CSS-selektor. Obligatoriska
+parametrar är `skrap` och `css`. Använd `vanta = FALSE` när klicket startar en
+nedladdning.
+
+```{r, code = exempel("klicka_via_id"), eval = FALSE}
+```
+
+`vanta_pa_js()` väntar tills ett JavaScript-villkor är sant, t.ex. att sidans
+egen kod skapat en variabel. Obligatoriska parametrar är `skrap` och
+`villkor`.
+
+```{r, code = exempel("vanta_pa_js"), eval = FALSE}
+```
+
+## Listor, textrutor och attribut
+
+`hamta_select_options()` läser alla alternativ i en select-lista i ett enda
+anrop och returnerar en data frame med `value` och `text`.
+`hamta_select_varden()` returnerar bara värdena. Båda kräver `skrap` och
+`css`.
+
+```{r, code = exempel("hamta_select_options"), eval = FALSE}
+```
+
+```{r, code = exempel("hamta_select_varden"), eval = FALSE}
+```
+
+Det finns två sätt att välja i en lista. `valj_i_lista()` sätter värdet och
+skickar `change`-händelser som när en användare väljer, så att sidans egen kod
+reagerar. `valj_option_utan_event()` markerar ett eller flera alternativ utan
+att sidan märker det, för sidor där onchange-koden är trasig. Den klarar också
+flervalslistor. Båda kräver `skrap`, `css` och `value`.
+
+```{r, code = exempel("valj_i_lista"), eval = FALSE}
+```
+
+```{r, code = exempel("valj_option_utan_event"), eval = FALSE}
+```
+
+`textruta_inmatning()` fyller i en textruta och skickar `input`- och
+`change`-händelser. Obligatoriska parametrar är `skrap`, `css` och `text`;
+med `rensa = FALSE` läggs texten till sist.
+
+```{r, code = exempel("textruta_inmatning"), eval = FALSE}
+```
+
+`hamta_attribut()` läser ett HTML-attribut, t.ex. adressen en länk pekar på.
+Obligatoriska parametrar är `skrap`, `css` och `attribut`. Saknas attributet
+returneras `NA`.
+
+```{r, code = exempel("hamta_attribut"), eval = FALSE}
+```
+
+## Ladda ner filer
+
+`hamta_nedladdning()` kör en funktion som startar nedladdningen och väntar
+tills filen är klar, och returnerar filens sökväg. Obligatoriska parametrar är
+`skrap` och `trigger`, en funktion utan argument som gör klicket. Med
+`monster` godtas bara filer vars namn matchar, och `nedladdningsmapp` styr var
+filen hamnar (standard är en ny tillfällig mapp).
+
+```{r, code = exempel("hamta_nedladdning"), eval = FALSE}
+```
+
+`stall_in_nedladdningsmapp()` ställer bara in mappen och används av
+`hamta_nedladdning()`. Den behövs om du laddar ner filer på annat sätt.
+Obligatoriska parametrar är `skrap` och `mapp`.
+
+```{r, code = exempel("stall_in_nedladdningsmapp"), eval = FALSE}
+```
+
+## Logga hur lång tid stegen tar
+
+`loggning_initiera()` returnerar en loggfunktion som skriver ut meddelanden
+med antal sekunder sedan start. Med `verbose = FALSE` stängs all loggning av
+på ett ställe. Inga parametrar är obligatoriska. Exemplet körs när vignetten
+byggs.
+
+```{r, code = exempel("loggning_initiera")}
+```
+
+## Översikt över funktionerna
+
+| Funktion | Vad den gör | Obligatoriska parametrar |
+|---|---|---|
+| `testa_skrapmiljo()` | Testa om datorn klarar att köra en skrapsession | – |
+| `hitta_webblasare()` | Hitta en installerad webbläsare (Edge eller Chrome) | – |
+| `test_internetanslutning()` | Testa internetanslutningen med en riktig HTTP-förfrågan | – |
+| `starta_skrapsession()` | Starta en skrapsession i Edge eller Chrome | – |
+| `stang_skrapsession()` | Stäng en skrapsession och städa bort allt den skapade | `skrap` |
+| `with_skrapsession()` | Kör kod i en skrapsession som stängs automatiskt efteråt | `expr` |
+| `inspektera_kontroller()` | Kartlägg alla kontroller på den öppna sidan | `skrap` |
+| `visa_kontroller()` | Skriv ut en översikt över sidans kontroller | `skrap` |
+| `kor_js()` | Kör JavaScript på sidan och returnera resultatet | `skrap`, `js` |
+| `hitta()` | Hitta ett element i en skrapsession | `skrap` |
+| `hitta_alla()` | Hitta alla matchande element i en skrapsession | `skrap` |
+| `hitta_via_text()` | Hitta ett element via dess synliga text | `skrap`, `text` |
+| `klicka_via_text()` | Klicka på ett element via dess synliga text | `skrap`, `text` |
+| `klicka_via_klass_och_text()` | Klicka på ett element via CSS-klass och exakt text | `skrap`, `klass`, `text` |
+| `klicka_via_id()` | Klicka på ett element via CSS-selektor | `skrap`, `css` |
+| `vanta_pa_js()` | Vänta tills ett JavaScript-villkor blir sant | `skrap`, `villkor` |
+| `hamta_select_options()` | Läs ut alla alternativ i en select-lista | `skrap`, `css` |
+| `hamta_select_varden()` | Läs ut värdena i en select-lista | `skrap`, `css` |
+| `valj_i_lista()` | Välj ett alternativ i en select-lista | `skrap`, `css`, `value` |
+| `valj_option_utan_event()` | Markera alternativ i en select-lista utan att sidan märker det | `skrap`, `css`, `value` |
+| `textruta_inmatning()` | Fyll i text i en textruta | `skrap`, `css`, `text` |
+| `hamta_attribut()` | Läs ett attribut från ett element | `skrap`, `css`, `attribut` |
+| `hamta_nedladdning()` | Klicka fram en nedladdning och vänta tills filen är klar | `skrap`, `trigger` |
+| `stall_in_nedladdningsmapp()` | Ställ in var webbläsaren sparar nedladdade filer | `skrap`, `mapp` |
+| `loggning_initiera()` | Skapa en loggfunktion som visar förfluten tid | – |

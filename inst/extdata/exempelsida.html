@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Exempelsida för rdwebbskrapning</title>
+</head>
+<body>
+<!-- Påhittad sida som exemplen i paketet skrapar. Den innehåller de
+     vanligaste kontrolltyperna: select-listor, textruta, knapp, länkar,
+     en div-"knapp", en nedladdningslänk och en iframe. -->
+<h1>Statistik för Dalarna</h1>
+
+<label for="ar">År</label>
+<select id="ar" name="ar" onchange="document.getElementById('valt_ar').textContent = this.value;">
+  <option value="2022">2022</option>
+  <option value="2023">2023</option>
+  <option value="2024" selected>2024</option>
+</select>
+<p>Valt år: <span id="valt_ar">2024</span></p>
+
+<label for="kommuner">Kommuner</label>
+<select id="kommuner" name="kommuner" multiple>
+  <option value="2080">Falun</option>
+  <option value="2081">Borlänge</option>
+  <option value="2062">Mora</option>
+</select>
+
+<p>
+  <input type="text" id="sokruta" name="sok" value="">
+  <button id="visa" onclick="document.getElementById('resultat').textContent = 'Du sökte på ' + document.getElementById('sokruta').value;">Visa</button>
+</p>
+<p id="resultat"></p>
+
+<div class="kort" style="cursor: pointer" onclick="document.getElementById('resultat').textContent = 'Valt kort: Befolkning';">Befolkning</div>
+<div class="kort" style="cursor: pointer" onclick="document.getElementById('resultat').textContent = 'Valt kort: Arbetsmarknad';">Arbetsmarknad</div>
+
+<p>
+  <a id="nedladdning" href="data:text/csv;charset=utf-8,kommun%3Bbefolkning%0AFalun%3B59000%0ABorl%C3%A4nge%3B52000%0A" download="befolkning.csv">Ladda ner data</a>
+  <a id="tabell_lank" href="#tabell" data-tabell="befolkning">Till tabellen</a>
+</p>
+
+<iframe id="ram" srcdoc="<p id='inne'>Text i en iframe</p><a id='inne_lank' href='#' data-info='i-ramen'>Länk i iframe</a>"></iframe>
+
+<h2 id="tabell">Tabell</h2>
+<p id="kalla">Källa: SCB:s 'Befolkningsstatistik'</p>
+<p>Sidan sätter variabeln <code>sidanKlar</code> en halv sekund efter att den laddats.</p>
+
+<script>
+  setTimeout(function () { window.sidanKlar = true; }, 500);
+</script>
+</body>
+</html>
